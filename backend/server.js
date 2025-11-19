@@ -12,11 +12,13 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.send('Your backend API is running!'); // Or res.json({ status: 'ok' })
 });
+app.use('/', apiRouter);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/documents", docRoutes);
