@@ -1,156 +1,78 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState(""); // Added for confirmation
-  const [forceChange, setForceChange] = useState(false);
-  const [error, setError] = useState(""); // For showing login errors
-  const navigate = useNavigate();
+  const navigate = useNavigate();
+  const API_URL = process.env.REACT_APP_API_URL;
 
-  // Check if already logged in
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-        // If a token exists, try to navigate to the correct dashboard
-        // This prevents logged-in users from seeing the login page
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (user?.role === 'admin') navigate("/admin");
-        if (user?.role === 'auditor') navigate("/dashboard");
-    }
-  }, [navigate]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
-    setError(""); // Clear previous errors
-    try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-      if (res.ok) {
-        if (data.forcePasswordChange) {
-          // Save email to localStorage so the change password page can use it
-          localStorage.setItem("emailToChange", data.email);
-          setForceChange(true);
-        } else {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("user", JSON.stringify({ email, role: data.role }));
-          
-          // Role-based navigation
-          if (data.role === 'admin') {
-              navigate("/admin");
-          } else if (data.role === 'auditor') {
-              navigate("/dashboard");
-          } else {
-              setError("Login successful, but user role is unknown.");
-          }
-        }
-      } else {
-        setError(data.message || "Login failed.");
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Server error. Please try again later.");
-    }
-  };
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-  const handleChangePassword = async () => {
-    setError("");
-    if (newPassword !== confirmPassword) {
-        setError("Passwords do not match.");
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Login failed");
         return;
-    }
-
-    const emailToChange = localStorage.getItem("emailToChange");
-    if (!emailToChange) {
-        setError("Session expired. Please go back to login.");
-        return;
-    }
-
-    try {
-      const res = await fetch("http://localhost:5000/api/auth/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailToChange, newPassword }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("Password changed successfully, please login again.");
-        localStorage.removeItem("emailToChange"); // Clean up
-        setForceChange(false);
-        setPassword(""); 
-        setNewPassword("");
-        setConfirmPassword("");
-      } else {
-        setError(data.message || "Failed to change password.");
       }
-    } catch (err) {
-      console.error(err);
-      setError("Server error.");
-    }
-  };
 
-  // This is the JSX that renders the page
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-10">
-      {!forceChange ? (
-        <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg">
-          <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">Login</h2>
-          <input 
-            type="email" 
-            placeholder="Email" 
-            value={email} 
-            onChange={e => setEmail(e.target.value)} 
-            className="border p-3 mb-4 w-full rounded"
-          />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)} 
-            className="border p-3 mb-4 w-full rounded"
-          />
-          {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-          <button 
-            onClick={handleLogin} 
-            className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 transition"
-          >
-            Login
-          </button>
-        </div>
-      ) : (
-        <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg">
-          <h2 className="text-2xl font-bold text-center text-yellow-700 mb-4">
-            Please Update Your Password
-          </h2>
-          <input 
-            type="password" 
-            placeholder="New Password" 
-            value={newPassword} 
-            onChange={e => setNewPassword(e.target.value)} 
-            className="border p-3 mb-4 w-full rounded"
-          />
-          <input 
-            type="password" 
-            placeholder="Confirm New Password" 
-            value={confirmPassword} 
-            onChange={e => setConfirmPassword(e.target.value)} 
-            className="border p-3 mb-4 w-full rounded"
-          />
-          {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-          <button 
-            onClick={handleChangePassword} 
-            className="w-full bg-yellow-500 text-white p-3 rounded hover:bg-yellow-600 transition"
-          >
-            Update Password
-          </button>
-        </div>
-      )}
-    </div>
-  );
+      // Save user + token
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // If backend says user must change password
+      if (data.user.forcePasswordChange) {
+        localStorage.setItem("emailToChange", email);
+        navigate("/change-password");
+        return;
+      }
+
+      // Redirect by role
+      if (data.user.role === "admin") navigate("/admin");
+      else navigate("/dashboard");
+
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Network error. Try again.");
+    }
+  };
+
+  return (
+    <div className="p-10">
+      <h2 className="text-xl font-bold mb-4">Login</h2>
+      <form onSubmit={handleLogin} className="space-y-4">
+        <input
+          type="email"
+          placeholder="Email"
+          className="border p-2 rounded w-full"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          className="border p-2 rounded w-full"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+        >
+          Login
+        </button>
+      </form>
+    </div>
+  );
 }
