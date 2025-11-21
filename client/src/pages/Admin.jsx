@@ -32,18 +32,18 @@ export default function Admin() {
   };
 
   // Fetch folders
-  const fetchFolders = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/documents`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) setFolders(data.folders || []);
-      else console.error(data.message);
-    } catch (err) {
-      console.error("Error fetching folders:", err);
-    }
-  };
+ const fetchFolders = async () => {
+  try {
+    const res = await fetch(`${API_URL}/api/documents`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (res.ok) setFolders(data.folders || []);
+    else console.error(data.message);
+  } catch (err) {
+    console.error("Error fetching folders:", err);
+  }
+};
 
   // Fetch users
   const fetchUsers = async () => {

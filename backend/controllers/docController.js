@@ -114,38 +114,28 @@ export const deleteFile = async (req, res) => {
 };
 
 // --- 4. Fetch Documents ---
+// GET /api/documents
+
 export const getAllDocuments = async (req, res) => {
   try {
     const folders = await Folder.findAll({
       where: { isDeleted: false },
-      include: [{ model: User, as: "owner", attributes: ["email"] }]
+      include: [{ model: User, as: "owner", attributes: ["email"] }],
+      order: [["createdAt", "DESC"]],
     });
 
-    const files = await File.findAll({
-      where: { isDeleted: false },
-      include: [{ model: User, as: "owner", attributes: ["email"] }]
-    });
+    // Map to frontend format
+    const result = folders.map((f) => ({
+      id: f.id,
+      name: f.name,
+      type: "folder",
+      owner: f.owner,
+      createdAt: f.createdAt,
+    }));
 
-    const data = [
-      ...folders.map(f => ({
-        id: f.id,
-        name: f.name,
-        type: "folder",
-        ownerEmail: f.owner?.email || "Unknown",
-        createdAt: f.createdAt
-      })),
-      ...files.map(f => ({
-        id: f.id,
-        name: f.title,
-        type: "file",
-        ownerEmail: f.owner?.email || "Unknown",
-        createdAt: f.createdAt
-      }))
-    ];
-
-    res.json({ folders: data });
+    res.json({ folders: result });
   } catch (err) {
-    console.error("Error fetching documents:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Fetch folders failed:", err);
+    res.status(500).json({ message: "Failed to fetch folders", error: err.message });
   }
 };
