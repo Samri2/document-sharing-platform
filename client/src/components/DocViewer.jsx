@@ -1,48 +1,51 @@
 // components/DocViewer.js
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export default function DocViewer({ selectedDoc }) {
   const [fileUrl, setFileUrl] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const token = localStorage.getItem("token");
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   useEffect(() => {
-    // Clear previous URL when a new doc is selected or deselected
+    if (!selectedDoc || !token) return;
+
+    setLoading(true);
+    setError(null);
+
+    // Clear previous URL
     if (fileUrl) {
       URL.revokeObjectURL(fileUrl);
       setFileUrl(null);
     }
 
-    if (selectedDoc && token) {
-      // ✨ FIX: Fetch the file from the SECURE endpoint
-      fetch(`http://localhost:5000/api/documents/view/${selectedDoc.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('File not found or unauthorized');
-        return res.blob(); // Get the file data as a Blob
-      })
-      .then(blob => {
-        // Create a temporary URL for the browser to display the blob
+    const fetchFile = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/getAllDocuments`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) throw new Error("File not found or unauthorized");
+
+        const blob = await res.blob();
         const objectUrl = URL.createObjectURL(blob);
         setFileUrl(objectUrl);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error("Error fetching file:", err);
-        setFileUrl(null); // Clear URL on error
-      });
-    }
-
-    // Cleanup function to revoke the URL when the component unmounts
-    return () => {
-      if (fileUrl) {
-        URL.revokeObjectURL(fileUrl);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
-  }, [selectedDoc, token]); // Re-run if the selected doc changes
 
+    fetchFile();
+
+    // Cleanup: revoke object URL on unmount or doc change
+    return () => {
+      if (fileUrl) URL.revokeObjectURL(fileUrl);
+    };
+  }, [selectedDoc, token, API_URL]);
 
   if (!selectedDoc) {
     return (
@@ -52,32 +55,46 @@ export default function DocViewer({ selectedDoc }) {
     );
   }
 
-  // Determine file type from its original name
+  if (loading) {
+    return (
+      <div className="p-6 text-gray-500">
+        <p>Loading document...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-red-600">
+        <p>Error: {error}</p>
+      </div>
+    );
+  }
+
+  // Determine file type
   const isPDF = selectedDoc.title.toLowerCase().endsWith(".pdf");
   const isImage = /\.(jpg|jpeg|png|gif)$/i.test(selectedDoc.title);
 
   return (
     <div className="p-6 bg-gray-50 rounded-lg">
       <h3 className="font-semibold mb-2">{selectedDoc.title}</h3>
-      
-      {!fileUrl ? (
-        <p>Loading document...</p>
-      ) : isPDF ? (
+
+      {isPDF ? (
         <iframe
-          src={fileUrl} // ✨ Use the secure, temporary blob URL
+          src={fileUrl}
           title="PDF Viewer"
           className="w-full h-[600px] border rounded"
-        ></iframe>
+        />
       ) : isImage ? (
         <img
-          src={fileUrl} // ✨ Use the secure, temporary blob URL
+          src={fileUrl}
           alt={selectedDoc.title}
           className="max-h-[600px] rounded"
         />
       ) : (
         <a
           href={fileUrl}
-          download={selectedDoc.title} // Allow download for other file types
+          download={selectedDoc.title}
           className="text-blue-600 underline"
         >
           Download File (Unsupported Preview)
