@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../db.js";
+import sequelize from "../config/db.js";
 
 const File = sequelize.define("files", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },

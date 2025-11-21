@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../db.js";
+import sequelize from "../config/db.js";
 
 const AuditLog = sequelize.define("audit_logs", {
   id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
