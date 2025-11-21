@@ -20,14 +20,14 @@ console.log("Received login request for:", email);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // Critical check: Ensure the password hash is present before comparing
-    if (!user.password) {
+    if (!user.password_hash) {
         console.error(`User ${email} found, but password hash is null or empty.`);
         return res.status(500).json({ message: "Internal user data error." });
     }
     
     // Check password - This is the most likely line to throw an error 
     // if the hash is malformed (e.g., has extra spaces).
-    const valid = await bcrypt.compare(password, user.password);
+    const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ message: "Invalid credentials" });
 
     // Check if user is active (Soft Delete)
@@ -74,7 +74,7 @@ export const changePassword = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const hashed = await bcrypt.hash(newPassword, 10);
-    user.password = hashed;
+    user.password_hash = hashed;
     user.forcePasswordChange = false; // password updated, no longer forced
     await user.save();
 
