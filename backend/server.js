@@ -3,15 +3,13 @@ import cors from "cors";
 import dotenv from "dotenv";
 import sequelize from "./config/db.js";
 
-// Import models here
-import User from "./models/User.js";
-import Folder from "./models/Folder.js";
-import Document from "./models/Document.js";
+
 
 // Import routes
 import docRoutes from "./routes/docRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+
 import User from "./models/User.js";
 import Folder from "./models/Folder.js";
 import File from "./models/File.js";
