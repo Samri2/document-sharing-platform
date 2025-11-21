@@ -14,5 +14,8 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
     },
   },
 });
+sequelize.authenticate()
+  .then(() => console.log("🔥 DB Connected Successfully"))
+  .catch(err => console.error("❌ DB Connection Error:", err));
 
 export default sequelize;
