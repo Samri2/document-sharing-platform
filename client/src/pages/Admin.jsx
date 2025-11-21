@@ -9,6 +9,7 @@ export default function Admin() {
   const [users, setUsers] = useState([]);
   const [newFolderName, setNewFolderName] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFolderId, setSelectedFolderId] = useState(null); // <- added
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -32,18 +33,18 @@ export default function Admin() {
   };
 
   // Fetch folders
- const fetchFolders = async () => {
-  try {
-    const res = await fetch(`${API_URL}/api/documents`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if (res.ok) setFolders(data.folders || []);
-    else console.error(data.message);
-  } catch (err) {
-    console.error("Error fetching folders:", err);
-  }
-};
+  const fetchFolders = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/documents`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) setFolders(data.folders || []);
+      else console.error(data.message);
+    } catch (err) {
+      console.error("Error fetching folders:", err);
+    }
+  };
 
   // Fetch users
   const fetchUsers = async () => {
@@ -223,91 +224,114 @@ export default function Admin() {
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} handleLogout={handleLogout} />
       <div className="flex-1 p-10">
         {/* DOCUMENT MANAGEMENT UI */}
-    // DOCUMENT MANAGEMENT UI
-{activeTab === "docs" && (
-  <>
-    <h2 className="text-2xl font-bold text-blue-700 mb-4">📁 Document Management</h2>
+        {activeTab === "docs" && (
+          <>
+            <h2 className="text-2xl font-bold text-blue-700 mb-4">📁 Document Management</h2>
 
-    <div className="flex items-center space-x-4 mb-6 p-4 border rounded-lg bg-gray-50">
-      <input
-        type="text"
-        placeholder="New Folder Name"
-        className="border p-2 rounded-md flex-1"
-        value={newFolderName}
-        onChange={(e) => setNewFolderName(e.target.value)}
-      />
-      <button
-        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        onClick={() => createFolderBackend(newFolderName)}
-      >
-        Add Folder
-      </button>
-      <div className="border-l h-8 mx-2"></div>
-      <input type="file" className="flex-1" onChange={(e) => setSelectedFile(e.target.files[0])} />
-      <button
-        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400"
-        onClick={() => uploadFileBackend(null, selectedFile)}
-        disabled={!selectedFile}
-      >
-        Upload File
-      </button>
-    </div>
+            <div className="flex items-center space-x-4 mb-6 p-4 border rounded-lg bg-gray-50">
+              <input
+                type="text"
+                placeholder="New Folder Name"
+                className="border p-2 rounded-md flex-1"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+              />
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                onClick={() => createFolderBackend(newFolderName)}
+              >
+                Add Folder
+              </button>
 
-    <h3 className="text-xl font-semibold mb-3">Root Contents</h3>
-    <table className="w-full border rounded-lg overflow-hidden">
-      <thead className="bg-gray-200">
-        <tr>
-          <th className="border p-3 text-left w-1/12">Type</th>
-          <th className="border p-3 text-left w-5/12">Name</th>
-          <th className="border p-3 text-left w-2/12">Created By</th>
-          <th className="border p-3 text-left w-2/12">Date</th>
-          <th className="border p-3 text-center w-2/12">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {folders.length === 0 ? (
-          <tr>
-            <td colSpan="5" className="text-center p-4 text-gray-500">
-              No documents or folders found.
-            </td>
-          </tr>
-        ) : (
-          folders.map((item) => (
-            <tr key={item.id} className="hover:bg-gray-50">
-              <td className="border p-3">{item.type === "folder" ? "📁 Folder" : "📄 File"}</td>
-              <td className="border p-3 font-medium text-blue-700 cursor-pointer hover:underline">{item.name}</td>
-              <td className="border p-3">{item.owner?.email || user.email}</td> {/* mapped owner relation */}
-              <td className="border p-3">{new Date(item.createdAt).toLocaleDateString()}</td>
-              <td className="border p-3 text-center space-x-2">
-                {item.type === "folder" ? (
-                  <button
-                    className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                    onClick={() => deleteFolderBackend(item.id)}
-                  >
-                    Delete 🗑️
-                  </button>
+              <div className="border-l h-8 mx-2"></div>
+
+              {/* Folder selection dropdown */}
+              <select
+                className="border p-2 rounded-md"
+                value={selectedFolderId || ""}
+                onChange={(e) => setSelectedFolderId(e.target.value)}
+              >
+                <option value="">Root</option>
+                {folders.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+
+              <input type="file" className="flex-1" onChange={(e) => setSelectedFile(e.target.files[0])} />
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400"
+                onClick={() => uploadFileBackend(selectedFolderId, selectedFile)}
+                disabled={!selectedFile}
+              >
+                Upload File
+              </button>
+            </div>
+
+            <h3 className="text-xl font-semibold mb-3">Root Contents</h3>
+            <table className="w-full border rounded-lg overflow-hidden">
+              <thead className="bg-gray-200">
+                <tr>
+                  <th className="border p-3 text-left w-1/12">Type</th>
+                  <th className="border p-3 text-left w-5/12">Name</th>
+                  <th className="border p-3 text-left w-2/12">Created By</th>
+                  <th className="border p-3 text-left w-2/12">Date</th>
+                  <th className="border p-3 text-center w-2/12">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {folders.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="text-center p-4 text-gray-500">
+                      No documents or folders found.
+                    </td>
+                  </tr>
                 ) : (
-                  <>
-                    <button className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">
-                      Download ⬇️
-                    </button>
-                    <button
-                      className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                      onClick={() => deleteFileBackend(item.id)}
-                    >
-                      Delete 🗑️
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  </>
-)}
+                  folders.map((folder) => (
+                    <React.Fragment key={folder.id}>
+                      <tr className="hover:bg-gray-50">
+                        <td className="border p-3">📁 Folder</td>
+                        <td className="border p-3 font-medium text-blue-700 cursor-pointer hover:underline">{folder.name}</td>
+                        <td className="border p-3">{folder.owner?.email || user.email}</td>
+                        <td className="border p-3">{new Date(folder.createdAt).toLocaleDateString()}</td>
+                        <td className="border p-3 text-center">
+                          <button
+                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                            onClick={() => deleteFolderBackend(folder.id)}
+                          >
+                            Delete 🗑️
+                          </button>
+                        </td>
+                      </tr>
+                      {folder.files && folder.files.map((file) => (
+                        <tr key={file.id} className="hover:bg-gray-50">
+                          <td className="border p-3">📄 File</td>
+                          <td className="border p-3">{file.title}</td>
+                          <td className="border p-3">{folder.owner?.email || user.email}</td>
+                          <td className="border p-3">{new Date(file.createdAt).toLocaleDateString()}</td>
+                          <td className="border p-3 text-center space-x-2">
+                           <a
+                        href={`${API_URL}/api/documents/download/${file.id}`}
+                   className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+                      >
+                   Download ⬇️
+                              </a>
 
+                            <button
+                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                              onClick={() => deleteFileBackend(file.id)}
+                            >
+                              Delete 🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </>
+        )}
 
         {/* USER MANAGEMENT UI */}
         {activeTab === "users" && (
