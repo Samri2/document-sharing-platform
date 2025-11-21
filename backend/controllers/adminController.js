@@ -20,8 +20,8 @@ export const createUser = async (req, res) => {
       email,
       password_hash: hashedPassword,
       role,
-      force_Password_Change: true, // force password change on first login
-       createdBy: req.user.id, // Assuming req.user.id is available from verifyToken
+      force_password_change: true, // force password change on first login
+       created_by: req.user.id, // Assuming req.user.id is available from verifyToken
     });
 
     // ... response code (No changes) ...
@@ -55,7 +55,7 @@ export const forcePasswordReset = async (req, res) => {
         const hashedPassword = await bcrypt.hash(newTempPassword, 10);
 
         userToReset.password_hash = hashedPassword;
-        userToReset.forcePasswordChange = true; // 🔑 KEY LOGIC: Force immediate change
+        userToReset.force_password_change = true; // 🔑 KEY LOGIC: Force immediate change
         await userToReset.save();
 
         // 📝 In a real app, log this action in an audit table here.
