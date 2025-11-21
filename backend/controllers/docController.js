@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import multer from "multer";
 import Folder from "../models/Folder.js"; 
-import File from "../models/File.js"; 
+import File from "../models/file.js"; 
 
 // --- 1. File Upload Setup (Multer) ---
 
