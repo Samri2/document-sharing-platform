@@ -1,11 +1,12 @@
+// documentController.js (folders & files)
 import fs from "fs";
 import path from "path";
 import multer from "multer";
-import Folder from "../models/Folder.js"; 
+import Folder from "../models/Folder.js";
 import File from "../models/File.js";
 import User from "../models/User.js";
 
-// --- 1. File Upload Setup ---
+// --- File Upload Setup ---
 const uploadPath = path.join(path.resolve(), "uploads");
 if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
 
@@ -16,12 +17,10 @@ const storage = multer.diskStorage({
 
 export const upload = multer({ storage });
 
-// --- 2. Folder Management ---
-
+// --- Folder CRUD ---
 export const createFolder = async (req, res) => {
   const { name, parentFolderId } = req.body;
   const userId = req.user.id;
-
   if (!name) return res.status(400).json({ message: "Folder name required" });
 
   try {
@@ -31,19 +30,16 @@ export const createFolder = async (req, res) => {
       ownerId: userId,
       isDeleted: false
     });
-
     res.json({ folder });
   } catch (err) {
-    console.error("Error creating folder:", err);
+    console.error("Create folder failed:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 export const deleteFolder = async (req, res) => {
   try {
-    const folder = await Folder.findByPk(req.params.id, {
-      include: [{ model: File, as: "files" }]
-    });
+    const folder = await Folder.findByPk(req.params.id, { include: [{ model: File }] });
     if (!folder) return res.status(404).json({ message: "Folder not found" });
 
     const isAuthorized = folder.ownerId === req.user.id || req.user.role === "admin";
@@ -52,20 +48,19 @@ export const deleteFolder = async (req, res) => {
     folder.isDeleted = true;
     await folder.save();
 
-    for (const file of folder.files) {
+    for (const file of folder.Files || []) {
       file.isDeleted = true;
       await file.save();
     }
 
     res.json({ message: "Folder and its contents deleted successfully" });
   } catch (err) {
-    console.error("Delete folder error:", err);
+    console.error("Delete folder failed:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// --- 3. File Management ---
-
+// --- File CRUD ---
 export const uploadFile = async (req, res) => {
   const { folderId } = req.body;
   const file = req.file;
@@ -90,8 +85,8 @@ export const uploadFile = async (req, res) => {
 
     res.status(201).json({ message: "File uploaded", file: newFile });
   } catch (err) {
-    console.error("Upload file error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Upload file failed:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
@@ -108,14 +103,12 @@ export const deleteFile = async (req, res) => {
 
     res.json({ message: "File deleted successfully" });
   } catch (err) {
-    console.error("Delete file error:", err);
+    console.error("Delete file failed:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// --- 4. Fetch Documents ---
-// GET /api/documents
-
+// --- Fetch folders with owner ---
 export const getAllDocuments = async (req, res) => {
   try {
     const folders = await Folder.findAll({
@@ -124,18 +117,17 @@ export const getAllDocuments = async (req, res) => {
       order: [["createdAt", "DESC"]],
     });
 
-    // Map to frontend format
-    const result = folders.map((f) => ({
+    const result = folders.map(f => ({
       id: f.id,
       name: f.name,
       type: "folder",
       owner: f.owner,
-      createdAt: f.createdAt,
+      createdAt: f.createdAt
     }));
 
     res.json({ folders: result });
   } catch (err) {
     console.error("Fetch folders failed:", err);
-    res.status(500).json({ message: "Failed to fetch folders", error: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
