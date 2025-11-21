@@ -35,7 +35,7 @@ export default function Admin() {
   // Fetch folders with files
   const fetchFolders = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/documents`, {
+      const res = await fetch(`${API_URL}/documents`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -49,7 +49,7 @@ export default function Admin() {
   // Fetch users
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/admin/users`, {
+      const res = await fetch(`${API_URL}/admin/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -69,7 +69,7 @@ export default function Admin() {
   const createFolderBackend = async (name) => {
     if (!name) return alert("Folder name required!");
     try {
-      const res = await fetch(`${API_URL}/api/documents/create-folder`, {
+      const res = await fetch(`${API_URL}/documents/create-folder`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,7 +91,7 @@ export default function Admin() {
   const deleteFolderBackend = async (folderId) => {
     if (!window.confirm("Delete this folder and all files inside?")) return;
     try {
-      const res = await fetch(`${API_URL}/api/documents/delete-folder/${folderId}`, {
+      const res = await fetch(`${API_URL}/documents/delete-folder/${folderId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -111,7 +111,7 @@ export default function Admin() {
     formData.append("file", file);
     formData.append("folderId", folderId || null);
     try {
-      const res = await fetch(`${API_URL}/api/documents/upload`, {
+      const res = await fetch(`${API_URL}/documents/upload`, {
         method: "POST",
         body: formData,
         headers: { Authorization: `Bearer ${token}` },
@@ -130,7 +130,7 @@ export default function Admin() {
   const deleteFileBackend = async (fileId) => {
     if (!window.confirm("Delete this file?")) return;
     try {
-      const res = await fetch(`${API_URL}/api/documents/delete-file/${fileId}`, {
+      const res = await fetch(`${API_URL}/documents/delete-file/${fileId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -143,11 +143,42 @@ export default function Admin() {
     }
   };
 
+  const downloadFileBackend = async (fileId, filename) => {
+    try {
+      const res = await fetch(`${API_URL}/documents/download/${fileId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        // Try to show server-provided JSON message if available
+        let errMsg = 'Failed to download file';
+        try {
+          const body = await res.json();
+          if (body && body.message) errMsg = body.message;
+        } catch (e) {
+          // ignore parse error
+        }
+        return alert(errMsg);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'download';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Download failed');
+    }
+  };
+
   // User management functions
   const addUser = async (email, role) => {
     if (!email || !role) return alert("Email and role required!");
     try {
-      const res = await fetch(`${API_URL}/api/admin/create-user`, {
+      const res = await fetch(`${API_URL}/admin/create-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ email, role }),
@@ -166,7 +197,7 @@ export default function Admin() {
     const action = isActive ? "deactivate" : "activate";
     if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
     try {
-      const res = await fetch(`${API_URL}/api/admin/users/${id}/status`, {
+      const res = await fetch(`${API_URL}/admin/users/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ isActive: !isActive }),
@@ -183,7 +214,7 @@ export default function Admin() {
 
   const updateUserRole = async (id, newRole) => {
     try {
-      const res = await fetch(`${API_URL}/api/admin/update-role/${id}`, {
+      const res = await fetch(`${API_URL}/admin/update-role/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ role: newRole }),
@@ -201,7 +232,7 @@ export default function Admin() {
   const forceResetPassword = async (id) => {
     if (!window.confirm("Force a password reset for this user?")) return;
     try {
-      const res = await fetch(`${API_URL}/api/admin/reset-password/${id}`, {
+      const res = await fetch(`${API_URL}/admin/reset-password/${id}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -308,12 +339,12 @@ export default function Admin() {
                           <td className="border p-3">{folder.owner?.email || user.email}</td>
                           <td className="border p-3">{new Date(file.createdAt).toLocaleDateString()}</td>
                           <td className="border p-3 text-center space-x-2">
-                            <a
-                              href={`${API_URL}/api/documents/download/${file.id}`}
+                            <button
                               className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+                              onClick={() => downloadFileBackend(file.id, file.title)}
                             >
                               Download ⬇️
-                            </a>
+                            </button>
                             <button
                               className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                               onClick={() => deleteFileBackend(file.id)}

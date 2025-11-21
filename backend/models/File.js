@@ -48,6 +48,4 @@ const File = sequelize.define(
   }
 );
 
-File.belongsTo(User, { foreignKey: "owner_id", as: "owner" });
-
 export default File;

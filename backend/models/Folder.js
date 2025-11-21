@@ -14,7 +14,7 @@ const Folder = sequelize.define(
     },
     ownerId: { 
       type: DataTypes.INTEGER, 
-      allowNull: false,
+      allowNull: true,
       field: "owner_id"
     },
     isDeleted: { 
@@ -32,7 +32,5 @@ const Folder = sequelize.define(
     timestamps: false
   }
 );
-
-Folder.belongsTo(User, { foreignKey: "owner_id", as: "owner" });
 
 export default Folder;

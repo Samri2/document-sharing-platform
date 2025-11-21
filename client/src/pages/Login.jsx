@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { API_BASE } from "../api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,7 +10,7 @@ export default function Login() {
   const [forceChange, setForceChange] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const API_URL = process.env.REACT_APP_API_URL;
+
   // Check if already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -25,7 +25,7 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -72,7 +72,7 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/change-password`, {
+      const res = await fetch(`${API_BASE}/api/auth/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailToChange, newPassword }),

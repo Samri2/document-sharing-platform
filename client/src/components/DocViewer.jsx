@@ -22,7 +22,8 @@ export default function DocViewer({ selectedDoc }) {
 
     const fetchFile = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/documents/getAllDocuments`, {
+        // Use the download endpoint to get the file blob
+        const res = await fetch(`${API_URL}/documents/download/${selectedDoc.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

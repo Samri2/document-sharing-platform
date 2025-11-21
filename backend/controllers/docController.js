@@ -151,7 +151,21 @@ export const downloadFile = async (req, res) => {
     const file = await File.findByPk(req.params.id);
     if (!file) return res.status(404).json({ message: "File not found" });
 
-    res.download(file.uniqueStorageKey, file.title);
+    // Ensure the stored path actually exists on this server before attempting download
+    const filePath = file.uniqueStorageKey;
+    // If the stored path doesn't exist on this host, attempt a fallback
+    if (!filePath || !fs.existsSync(filePath)) {
+      const fallback = path.join(uploadPath, path.basename(filePath || ""));
+      if (fallback && fs.existsSync(fallback)) {
+        console.warn(`Using fallback path for download: ${fallback}`);
+        return res.download(fallback, file.title);
+      }
+
+      console.error(`Download failed - path not found: ${filePath}`);
+      return res.status(404).json({ message: "File not found on server" });
+    }
+
+    res.download(filePath, file.title);
   } catch (err) {
     console.error("File download error:", err);
     res.status(500).json({ message: "Server error", error: err.message });

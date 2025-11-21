@@ -13,7 +13,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchFolders = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/documents/getAllDocuments`, {
+        const res = await fetch(`${API_BASE}/documents/getAllDocuments`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to fetch folders/files");

@@ -16,7 +16,7 @@ export default function ChangePassword() {
     if (!password) return alert("Enter a password!");
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/change-password`, {
+      const res = await fetch(`${API_URL}/auth/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailToChange, newPassword: password }),
