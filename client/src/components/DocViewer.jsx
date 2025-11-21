@@ -22,7 +22,7 @@ export default function DocViewer({ selectedDoc }) {
 
     const fetchFile = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/getAllDocuments`, {
+        const res = await fetch(`${API_URL}/api/documents/getAllDocuments`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
