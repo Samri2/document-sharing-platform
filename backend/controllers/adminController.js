@@ -1,25 +1,24 @@
+// adminController.js
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 
 // ===========================
-// Admin creates a new user
+// Create User
 // ===========================
 export const createUser = async (req, res) => {
   const { email, role } = req.body;
-  if (!email || !role)
-    return res.status(400).json({ message: "Email and role required" });
+  if (!email || !role) return res.status(400).json({ message: "Email and role required" });
 
   try {
-    // Generate a temporary password
     const tempPassword = Math.random().toString(36).slice(-8);
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     const newUser = await User.create({
       email,
-      passwordHash: hashedPassword,      // <-- fixed
+      passwordHash: hashedPassword,          // matches User model
       role,
-      forcePasswordChange: true,         // <-- fixed
-      createdBy: req.user.id,            // <-- fixed
+      forcePasswordChange: true,
+      createdBy: req.user.id,                // matches User model
     });
 
     res.json({
@@ -29,63 +28,60 @@ export const createUser = async (req, res) => {
       role: newUser.role,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Create user failed:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
 // ===========================
-// Reset user password
+// Force Password Reset
 // ===========================
 export const forcePasswordReset = async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const userToReset = await User.findByPk(userId);
-    if (!userToReset) return res.status(404).json({ message: "User not found" });
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (userToReset.role === 'admin' && req.user.role !== 'admin') {
-      return res.status(403).json({ message: "Cannot reset an Admin account." });
+    if (user.role === "admin" && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Cannot reset Admin account" });
     }
 
-    const newTempPassword = Math.random().toString(36).slice(-10);
-    const hashedPassword = await bcrypt.hash(newTempPassword, 10);
+    const tempPassword = Math.random().toString(36).slice(-10);
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    userToReset.passwordHash = hashedPassword;       // <-- fixed
-    userToReset.forcePasswordChange = true;         // <-- fixed
-    await userToReset.save();
+    user.passwordHash = hashedPassword;
+    user.forcePasswordChange = true;
+    await user.save();
 
     res.json({
-      message: `Password reset for user ${userId}. They must change it on next login.`,
-      newTempPassword,
+      message: `Password reset for user ${userId}`,
+      newTempPassword: tempPassword,
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("Password reset failed:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-// === Get All Users ===
+// ===========================
+// Get Users
+// ===========================
 export const getUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: [
-        "id",
-        "email",
-        "role",
-        "isActive",             // <-- fixed
-        "forcePasswordChange",  // <-- fixed
-      ],
+      attributes: ["id", "email", "role", "isActive", "forcePasswordChange"],
     });
     res.json({ users });
   } catch (err) {
-    console.error("Get users error:", err);
+    console.error("Get users failed:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-// === Delete User ===
+// ===========================
+// Delete User
+// ===========================
 export const deleteUser = async (req, res) => {
   try {
     const user = await User.findByPk(req.params.userId);
@@ -94,7 +90,30 @@ export const deleteUser = async (req, res) => {
     await user.destroy();
     res.json({ message: "User deleted successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("Delete user failed:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+//update roles
+export const updateUserRole = async (req, res) => {
+  const { id } = req.params;
+  const { role: newRole } = req.body;
+
+  if (!newRole) {
+    return res.status(400).json({ message: "New role is required" });
+  }
+
+  try {
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.role = newRole;
+    await user.save();
+
+    res.json({ message: "Role updated successfully", user });
+  } catch (err) {
+    console.error("Error updating user role:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };

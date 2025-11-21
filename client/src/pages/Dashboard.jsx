@@ -1,108 +1,106 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import DocViewer from "../components/DocViewer";
+import { API_BASE } from "../api";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
-  const token = localStorage.getItem("token"); // JWT token from login
-
+  const token = localStorage.getItem("token");
   const [selectedDoc, setSelectedDoc] = useState(null);
-  const [documents, setDocuments] = useState([]); // flattened files
+  const [folders, setFolders] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-  // Redirect if not auditor
+
   useEffect(() => {
-    if (!token || !user || user.role !== "auditor") {
-      navigate("/login");
-    }
-  }, [navigate, user, token]);
-
-  // Fetch folders and files from backend
-  useEffect(() => {
-    const fetchDocuments = async () => {
+    const fetchFolders = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/getAllDocuments`, {
+        const res = await fetch(`${API_BASE}/api/getAllDocuments`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!res.ok) {
-          const errData = await res.json();
-          console.error("Error fetching folders/files:", errData.message || res.statusText);
-          setDocuments([]);
-          return;
-        }
-
+        if (!res.ok) throw new Error("Failed to fetch folders/files");
         const data = await res.json();
-        // Flatten all files across folders
-        const allFiles = (data.folders || []).flatMap((folder) =>
-          (folder.files || []).map((file) => ({
-            ...file,
-            folderName: folder.name, // keep folder name
-          }))
-        );
-        setDocuments(allFiles);
+        setFolders(data.folders || []);
       } catch (err) {
-        console.error("Error fetching documents:", err);
-        setDocuments([]);
+        console.error(err);
       }
     };
-
-    fetchDocuments();
+    fetchFolders();
   }, [token]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
-
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="w-64 bg-gray-800 text-white flex flex-col p-4">
         <h2 className="text-xl font-bold mb-6">Auditor Panel</h2>
         <button
           className="mt-auto bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700"
-          onClick={handleLogout}
+          onClick={() => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.reload();
+          }}
         >
           Logout
         </button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col p-10 bg-gray-50">
+      {/* Main */}
+      <div className="flex-1 p-8">
         {!selectedDoc ? (
-          <div className="flex-1">
+          <>
             <h2 className="text-3xl font-bold text-blue-700 mb-6">📚 Documents</h2>
 
-            {documents.length === 0 ? (
-              <p className="text-gray-500">No documents found.</p>
-            ) : (
-              <ul className="space-y-3">
-                {documents.map((doc) => (
-                  <li
-                    key={doc.id}
-                    className="p-4 bg-white shadow rounded-lg flex justify-between items-center hover:bg-gray-100 cursor-pointer"
-                    onClick={() => setSelectedDoc(doc)}
-                  >
-                    <div>
-                      <span className="font-medium">{doc.title}</span>
-                      <span className="text-sm text-gray-400 ml-2">
-                        ({doc.folderName})
-                      </span>
-                    </div>
-                    <span className="text-sm text-gray-500">View ➜</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+            <input
+              type="text"
+              placeholder="Search folders or files..."
+              className="mb-4 p-2 rounded border w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white rounded shadow">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="py-2 px-4 text-left">Folder Name</th>
+                    <th className="py-2 px-4 text-left">File Name</th>
+                    <th className="py-2 px-4 text-left">Owner</th>
+                    <th className="py-2 px-4 text-left">Size (KB)</th>
+                    <th className="py-2 px-4 text-left">Created At</th>
+                    <th className="py-2 px-4">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {folders
+                    .filter(folder => 
+                      folder.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      folder.files.some(f => f.title.toLowerCase().includes(searchTerm.toLowerCase()))
+                    )
+                    .map(folder =>
+                      folder.files.map(file => (
+                        <tr key={file.id} className="border-t hover:bg-gray-50">
+                          <td className="py-2 px-4">{folder.name}</td>
+                          <td className="py-2 px-4">{file.title}</td>
+                          <td className="py-2 px-4">{file.owner?.email || "N/A"}</td>
+                          <td className="py-2 px-4">{(file.sizeBytes / 1024).toFixed(2)}</td>
+                          <td className="py-2 px-4">{new Date(file.createdAt).toLocaleString()}</td>
+                          <td className="py-2 px-4">
+                            <button
+                              className="text-blue-600 hover:underline"
+                              onClick={() => setSelectedDoc({ ...file, folderName: folder.name })}
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
           <DocViewer
-            title={selectedDoc.title}
-            fileUrl={`${API_URL}/api/documents/download/${selectedDoc.id}`}
+            selectedDoc={selectedDoc}
+            onClose={() => setSelectedDoc(null)}
           />
         )}
       </div>

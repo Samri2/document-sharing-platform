@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../components/AdminSidebar";
+import { API_BASE } from "../api";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function Admin() {
   // Fetch folders with files
   const fetchFolders = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/documents`, {
+      const res = await fetch(`${API_BASE}/api/getAllDocuments`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -48,7 +49,7 @@ export default function Admin() {
   // Fetch users
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/admin/users`, {
+      const res = await fetch(`${API_BASE}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -68,7 +69,7 @@ export default function Admin() {
   const createFolderBackend = async (name) => {
     if (!name) return alert("Folder name required!");
     try {
-      const res = await fetch(`${API_URL}/api/documents/create-folder`, {
+      const res = await fetch(`${API_BASE}/api/create-folder`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,7 +91,7 @@ export default function Admin() {
   const deleteFolderBackend = async (folderId) => {
     if (!window.confirm("Delete this folder and all files inside?")) return;
     try {
-      const res = await fetch(`${API_URL}/api/documents/delete-folder/${folderId}`, {
+      const res = await fetch(`${API_BASE}/api/delete-folder:id/${folderId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -110,7 +111,7 @@ export default function Admin() {
     formData.append("file", file);
     formData.append("folderId", folderId || null);
     try {
-      const res = await fetch(`${API_URL}/api/documents/upload`, {
+      const res = await fetch(`${API_BASE}/api/upload`, {
         method: "POST",
         body: formData,
         headers: { Authorization: `Bearer ${token}` },
@@ -129,7 +130,7 @@ export default function Admin() {
   const deleteFileBackend = async (fileId) => {
     if (!window.confirm("Delete this file?")) return;
     try {
-      const res = await fetch(`${API_URL}/api/documents/delete-file/${fileId}`, {
+      const res = await fetch(`${API_BASE}/api/delete-file/:id/${fileId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -146,7 +147,7 @@ export default function Admin() {
   const addUser = async (email, role) => {
     if (!email || !role) return alert("Email and role required!");
     try {
-      const res = await fetch(`${API_URL}/api/admin/create-user`, {
+      const res = await fetch(`${API_BASE}/api/create-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ email, role }),
@@ -165,7 +166,7 @@ export default function Admin() {
     const action = isActive ? "deactivate" : "activate";
     if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
     try {
-      const res = await fetch(`${API_URL}/api/admin/users/${id}/status`, {
+      const res = await fetch(`${API_BASE}/api/users/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ isActive: !isActive }),
@@ -182,7 +183,7 @@ export default function Admin() {
 
   const updateUserRole = async (id, newRole) => {
     try {
-      const res = await fetch(`${API_URL}/api/admin/update-role/${id}`, {
+      const res = await fetch(`${API_BASE}/api/update-role/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ role: newRole }),
@@ -200,7 +201,7 @@ export default function Admin() {
   const forceResetPassword = async (id) => {
     if (!window.confirm("Force a password reset for this user?")) return;
     try {
-      const res = await fetch(`${API_URL}/api/admin/reset-password/${id}`, {
+      const res = await fetch(`${API_BASE}/api/reset-password/${id}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
