@@ -22,14 +22,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
-  res.send('Your backend API is running!');
-});
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/documents", docRoutes);
 
+app.get('/', (req, res) => {
+  res.send('Your backend API is running!');
+});
 // Authenticate DB first
 sequelize.authenticate()
   .then(() => console.log("✅ Database connected"))
