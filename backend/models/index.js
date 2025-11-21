@@ -2,7 +2,7 @@ import User from "./User.js";
 import Folder from "./Folder.js";
 import File from "./File.js";
 import Document from "./Document.js";
-import AuditLog from "./Auditlog.js";
+import AuditLog from "./AuditLog.js";
 
 // User owns folders & files
 User.hasMany(Folder, { foreignKey: "owner_id" });

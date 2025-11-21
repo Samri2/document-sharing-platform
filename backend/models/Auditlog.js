@@ -13,4 +13,4 @@ const AuditLog = sequelize.define("audit_logs", {
   timestamps: false
 });
 
-export default Auditlog;
+export default AuditLog;

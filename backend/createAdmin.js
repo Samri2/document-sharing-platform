@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import sequelize from "./config/db.js";
 import User from "./models/User.js";
-
+import dotenv from "dotenv";
+dotenv.config();
 async function createAdmin() {
   try {
     await sequelize.sync(); // ensure tables exist
