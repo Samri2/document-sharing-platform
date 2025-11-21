@@ -31,7 +31,7 @@ console.log("Received login request for:", email);
     if (!valid) return res.status(401).json({ message: "Invalid credentials" });
 
     // Check if user is active (Soft Delete)
-    if (!user.isActive) {
+    if (!user.is_active) {
         return res.status(401).json({ message: "Account is inactive. Please contact administrator." });
     }
 
