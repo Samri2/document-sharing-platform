@@ -10,7 +10,7 @@ import Document from "./Document.js";
 
 // A user owns many folders
 User.hasMany(Folder, { foreignKey: "owner_id" });
-Folder.belongsTo(User, { foreignKey: "owner_id", as: "owner" });
+Folder.belongsTSo(User, { foreignKey: "owner_id", as: "owner" });
 
 // A user owns many files
 User.hasMany(File, { foreignKey: "owner_id" });
