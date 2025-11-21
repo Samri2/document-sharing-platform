@@ -2,100 +2,94 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 
 // ===========================
-// Admin creates a new user (MINOR REVISION: Use req.user.id for 'created_by')
+// Create new user (Admin only)
 // ===========================
 export const createUser = async (req, res) => {
-  const { email, role } = req.body;
-  if (!email || !role)
-    return res.status(400).json({ message: "Email and role required" });
+  const { email, role } = req.body;
+  if (!email || !role)
+    return res.status(400).json({ message: "Email and role required" });
 
-  try {
-    // Generate a temporary password
-    const tempPassword = Math.random().toString(36).slice(-8);
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+  try {
+    // Generate temporary password
+    const tempPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    // 🌟 REVISION: If you had a 'created_by' field in the User model,
-    // you would set it to req.user.id here.
-    const newUser = await User.create({
-      email,
-      password_hash: hashedPassword,
-      role,
-      force_password_change: true, // force password change on first login
-       created_by: req.user.id, // Assuming req.user.id is available from verifyToken
-    });
+    const newUser = await User.create({
+      email,
+      password_hash: hashedPassword,
+      role,
+      force_password_change: true,  // force password change on first login
+      is_active: true,              // default active
+      created_by: req.user.id,      // admin who created
+      created_at: new Date(),       // timestamp
+    });
 
-    // ... response code (No changes) ...
-    res.json({
-      message: "User created successfully",
-      tempPassword, 
-      email: newUser.email,
-      role: newUser.role,
-    });
-  } catch (err) {
-    console.error(err); 
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
+    res.status(201).json({
+      message: "User created successfully",
+      tempPassword, 
+      email: newUser.email,
+      role: newUser.role,
+    });
+  } catch (err) {
+    console.error("Create user error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 };
 
-// 🌟 NEW: Auditor/Admin resets another user's password
+// ===========================
+// Force password reset
+// ===========================
 export const forcePasswordReset = async (req, res) => {
-    // Note: This route will be protected by authorizeRole(['admin', 'auditor'])
-    const { userId } = req.params; 
+  const { userId } = req.params;
 
-    try {
-        const userToReset = await User.findByPk(userId);
-        if (!userToReset) return res.status(404).json({ message: "User not found" });
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Ensure Admins/Auditors cannot reset other Admins (optional security layer)
-        if (userToReset.role === 'admin' && req.user.role !== 'admin') {
-            return res.status(403).json({ message: "Cannot reset an Admin account." });
-        }
-
-        const newTempPassword = Math.random().toString(36).slice(-10);
-        const hashedPassword = await bcrypt.hash(newTempPassword, 10);
-
-        userToReset.password_hash = hashedPassword;
-        userToReset.force_password_change = true; // 🔑 KEY LOGIC: Force immediate change
-        await userToReset.save();
-
-        // 📝 In a real app, log this action in an audit table here.
-        
-        res.json({
-            message: `Password reset for user ${userId}. They must change it on next login.`,
-            newTempPassword, // Return to Auditor/Admin who initiated the reset
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Server error", error: err.message });
+    // Optional: prevent non-admins from resetting admin passwords
+    if (user.role === 'admin' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Cannot reset Admin account" });
     }
+
+    const tempPassword = Math.random().toString(36).slice(-10);
+    user.password_hash = await bcrypt.hash(tempPassword, 10);
+    user.force_password_change = true;
+    await user.save();
+
+    res.json({
+      message: `Password reset for user ${userId}. Must change on next login.`,
+      tempPassword,
+    });
+  } catch (err) {
+    console.error("Force password reset error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 };
 
-// ... add delete/edit user functions here using User.findByPk and user.destroy()/user.save() ...
-// backend/controllers/adminController.js (Ensure this is present)
-
-// ... (Your other imports and functions like createUser, forcePasswordReset)
-
-
-// === Get All Users (Admin-Only) ===
+// ===========================
+// Get all users (Admin only)
+// ===========================
 export const getUsers = async (req, res) => {
-    try {
-        // Find all users, but only select safe, non-sensitive fields
-        const users = await User.findAll({
-            attributes: [
-                "id", 
-                "email", 
-                "role", 
-                "is_active", // Show if the user is active (soft delete status)
-                "force_password_change" // Show if the user must reset their password
-            ], 
-        });
-        res.json({ users });
-    } catch (err) {
-        console.error("Get users error:", err);
-        res.status(500).json({ message: "Server error", error: err.message });
-    }
+  try {
+    const users = await User.findAll({
+      attributes: [
+        "id",
+        "email",
+        "role",
+        "is_active",
+        "force_password_change",
+      ],
+    });
+    res.json({ users });
+  } catch (err) {
+    console.error("Get users error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 };
+
+// ===========================
+// Delete a single user
+// ===========================
 export const deleteUser = async (req, res) => {
   try {
     const user = await User.findByPk(req.params.userId);
@@ -104,7 +98,7 @@ export const deleteUser = async (req, res) => {
     await user.destroy();
     res.json({ message: "User deleted successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("Delete user error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
