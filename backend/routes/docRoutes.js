@@ -6,7 +6,8 @@ import {
   createFolder,
   deleteFile,
   deleteFolder,
-  downloadFile
+  downloadFile,
+  getDocuments
 } from "../controllers/docController.js";
 import { verifyToken, authorizeRole } from "../middleware/authMiddleware.js"; 
 const router = express.Router();
@@ -23,5 +24,6 @@ router.delete("/delete-file/:id", verifyToken, authorizeRole(['admin']), deleteF
 router.get("/download/:id", downloadFile);
 
 // === Fetch All Folders + Files ===
+router.get("/", getDocuments);
 router.get("/", verifyToken, getAllDocuments); // This route remains the same
 export default router;

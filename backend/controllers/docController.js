@@ -157,3 +157,24 @@ export const downloadFile = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+// ===========================
+export const getDocuments = async (req, res) => {
+  try {
+    // Fetch all folders with their associated files
+    const folders = await Folder.findAll({
+      include: [
+        {
+          model: File,
+          as: "files", // this must match your Sequelize association
+          attributes: ["id", "title", "createdAt", "owner_id"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    res.json({ folders });
+  } catch (err) {
+    console.error("Fetch folders/files failed:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};

@@ -9,17 +9,16 @@ export default function Admin() {
   const [users, setUsers] = useState([]);
   const [newFolderName, setNewFolderName] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
-  const [selectedFolderId, setSelectedFolderId] = useState(null); // <- added
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
   const API_URL = process.env.REACT_APP_API_URL;
 
-  // Redirect if not logged in or not an admin
+  // Redirect if not logged in or not admin
   useEffect(() => {
-    if (!token || !user) {
-      navigate("/login");
-    } else if (user.role !== "admin") {
+    if (!token || !user) navigate("/login");
+    else if (user.role !== "admin") {
       alert("Access Denied: Admin role required.");
       navigate("/login");
     }
@@ -32,7 +31,7 @@ export default function Admin() {
     navigate("/login");
   };
 
-  // Fetch folders
+  // Fetch folders with files
   const fetchFolders = async () => {
     try {
       const res = await fetch(`${API_URL}/api/documents`, {
@@ -65,7 +64,7 @@ export default function Admin() {
     if (activeTab === "users") fetchUsers();
   }, [activeTab, token]);
 
-  // Create folder
+  // Folder operations
   const createFolderBackend = async (name) => {
     if (!name) return alert("Folder name required!");
     try {
@@ -88,7 +87,6 @@ export default function Admin() {
     }
   };
 
-  // Delete folder
   const deleteFolderBackend = async (folderId) => {
     if (!window.confirm("Delete this folder and all files inside?")) return;
     try {
@@ -105,7 +103,7 @@ export default function Admin() {
     }
   };
 
-  // Upload file
+  // File operations
   const uploadFileBackend = async (folderId, file) => {
     if (!file) return alert("Select a file to upload!");
     const formData = new FormData();
@@ -128,7 +126,6 @@ export default function Admin() {
     }
   };
 
-  // Delete file
   const deleteFileBackend = async (fileId) => {
     if (!window.confirm("Delete this file?")) return;
     try {
@@ -145,7 +142,7 @@ export default function Admin() {
     }
   };
 
-  // User management
+  // User management functions
   const addUser = async (email, role) => {
     if (!email || !role) return alert("Email and role required!");
     try {
@@ -158,7 +155,6 @@ export default function Admin() {
       if (res.ok) {
         alert(`User created. Temporary password: ${data.tempPassword}`);
         fetchUsers();
-        return data.user;
       } else alert(data.message || "Failed to create user");
     } catch (err) {
       console.error("Error adding user:", err);
@@ -267,7 +263,7 @@ export default function Admin() {
               </button>
             </div>
 
-            <h3 className="text-xl font-semibold mb-3">Root Contents</h3>
+            <h3 className="text-xl font-semibold mb-3">Folders & Files</h3>
             <table className="w-full border rounded-lg overflow-hidden">
               <thead className="bg-gray-200">
                 <tr>
@@ -302,6 +298,8 @@ export default function Admin() {
                           </button>
                         </td>
                       </tr>
+
+                      {/* Nested files */}
                       {folder.files && folder.files.map((file) => (
                         <tr key={file.id} className="hover:bg-gray-50">
                           <td className="border p-3">📄 File</td>
@@ -309,13 +307,12 @@ export default function Admin() {
                           <td className="border p-3">{folder.owner?.email || user.email}</td>
                           <td className="border p-3">{new Date(file.createdAt).toLocaleDateString()}</td>
                           <td className="border p-3 text-center space-x-2">
-                           <a
-                        href={`${API_URL}/api/documents/download/${file.id}`}
-                   className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
-                      >
-                   Download ⬇️
-                              </a>
-
+                            <a
+                              href={`${API_URL}/api/documents/download/${file.id}`}
+                              className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+                            >
+                              Download ⬇️
+                            </a>
                             <button
                               className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                               onClick={() => deleteFileBackend(file.id)}
