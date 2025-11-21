@@ -18,9 +18,9 @@ export const createUser = async (req, res) => {
     // you would set it to req.user.id here.
     const newUser = await User.create({
       email,
-      password: hashedPassword,
+      password_hash: hashedPassword,
       role,
-      forcePasswordChange: true, // force password change on first login
+      force_Password_Change: true, // force password change on first login
        createdBy: req.user.id, // Assuming req.user.id is available from verifyToken
     });
 
@@ -54,7 +54,7 @@ export const forcePasswordReset = async (req, res) => {
         const newTempPassword = Math.random().toString(36).slice(-10);
         const hashedPassword = await bcrypt.hash(newTempPassword, 10);
 
-        userToReset.password = hashedPassword;
+        userToReset.password_hash = hashedPassword;
         userToReset.forcePasswordChange = true; // 🔑 KEY LOGIC: Force immediate change
         await userToReset.save();
 
@@ -86,8 +86,8 @@ export const getUsers = async (req, res) => {
                 "id", 
                 "email", 
                 "role", 
-                "isActive", // Show if the user is active (soft delete status)
-                "forcePasswordChange" // Show if the user must reset their password
+                "is_active", // Show if the user is active (soft delete status)
+                "force_password_change" // Show if the user must reset their password
             ], 
         });
         res.json({ users });
@@ -95,4 +95,16 @@ export const getUsers = async (req, res) => {
         console.error("Get users error:", err);
         res.status(500).json({ message: "Server error", error: err.message });
     }
+};
+export const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    await user.destroy();
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 };
