@@ -11,6 +11,11 @@ export default function Login() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
   // Check if already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -22,40 +27,58 @@ export default function Login() {
   }, [navigate]);
 
   const handleLogin = async () => {
-    setError("");
+  setError("");
 
-    try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  // 🧪 Client-side validation
+  if (!email) {
+    setError("Email is required.");
+    return;
+  }
 
-      const data = await res.json();
+  if (!validateEmail(email)) {
+    setError("Enter a valid email address.");
+    return;
+  }
 
-      if (res.ok) {
-        if (data.forcePasswordChange) {
-          localStorage.setItem("emailToChange", data.email);
-          setForceChange(true);
-        } else {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem(
-            "user",
-            JSON.stringify({ email, role: data.role })
-          );
+  if (!password) {
+    setError("Password is required.");
+    return;
+  }
 
-          if (data.role === "admin") navigate("/admin");
-          else if (data.role === "auditor") navigate("/dashboard");
-          else setError("Login successful, but user role is unknown.");
-        }
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      if (data.forcePasswordChange) {
+        localStorage.setItem("emailToChange", data.email);
+        setForceChange(true);
       } else {
-        setError(data.message || "Login failed.");
+        localStorage.setItem("token", data.token);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ email, role: data.role })
+        );
+
+        if (data.role === "admin") navigate("/admin");
+        else if (data.role === "auditor") navigate("/dashboard");
+        else setError("Unknown user role.");
       }
-    } catch (err) {
-      console.error(err);
-      setError("Server error. Please try again later.");
+    } else {
+      setError(data.message || "Login failed.");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setError("Server error. Try again later.");
+  }
+};
+
 
   const handleChangePassword = async () => {
     setError("");
