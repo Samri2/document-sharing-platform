@@ -126,7 +126,7 @@ export const deleteFile = async (req, res) => {
 export const deleteFolder = async (req, res) => {
   try {
     const folder = await Folder.findByPk(req.params.id, {
-      include: [{ model: File }],
+      include: [{ model: File, as: "Files" }],
     });
     if (!folder) return res.status(404).json({ message: "Folder not found" });
 
