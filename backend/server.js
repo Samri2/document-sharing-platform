@@ -20,7 +20,7 @@ dotenv.config();
 
 const app = express();
 // Configure CORS to allow the frontend origin and Authorization header
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+const CLIENT_URL = process.env.CLIENT_URL || "https://document-sharing-platform-delta.vercel.app";
 app.use(
   cors({
     origin: CLIENT_URL,
