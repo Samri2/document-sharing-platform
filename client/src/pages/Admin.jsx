@@ -16,6 +16,11 @@ export default function Admin() {
   const token = localStorage.getItem("token");
   const API_URL = process.env.REACT_APP_API_URL;
 
+  const isValidEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
+
   // Redirect if not logged in or not admin
   useEffect(() => {
     if (!token || !user) navigate("/login");
@@ -375,11 +380,16 @@ export default function Admin() {
               <button
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
                 onClick={async () => {
-                  const email = document.getElementById("newUserEmail").value;
-                  const role = document.getElementById("newUserRole").value;
-                  await addUser(email, role);
-                  document.getElementById("newUserEmail").value = "";
-                }}
+  const email = document.getElementById("newUserEmail").value.trim();
+  const role = document.getElementById("newUserRole").value;
+
+  if (!email || !role) return alert("Email and role required!");
+  if (!isValidEmail(email)) return alert("Enter a valid email address!");
+
+  await addUser(email, role);
+  document.getElementById("newUserEmail").value = "";
+}}
+
               >
                 Add User
               </button>
