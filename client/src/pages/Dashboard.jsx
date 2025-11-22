@@ -31,16 +31,16 @@ export default function Dashboard() {
       {/* Sidebar */}
       <div className="w-64 bg-gray-800 text-white flex flex-col p-4">
         <h2 className="text-xl font-bold mb-6">Auditor Panel</h2>
-        <button
-          className="mt-auto bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700"
-          onClick={() => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            window.location.reload();
-          }}
-        >
-          Logout
         </button>
+
+      {/* ✅ Logout button */}
+      <button
+        className="mt-auto bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700"
+        onClick={handleLogout}
+      >
+        Logout
+      </button>
+
       </div>
 
       {/* Main */}
