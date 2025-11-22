@@ -94,6 +94,7 @@ export default function Admin() {
   };
 const deleteFolderBackend = async (folderId) => {
   if (!window.confirm("Delete this folder and all files inside?")) return;
+
   try {
     const res = await fetch(`${API_URL}/documents/delete-folder/${folderId}`, {
       method: "DELETE",
@@ -101,8 +102,10 @@ const deleteFolderBackend = async (folderId) => {
     });
 
     const data = await res.json();
+
     if (res.ok) {
-      fetchFolders(); // <-- refetch to reflect soft-delete
+      // Remove folder from state immediately
+      setFolders((prev) => prev.filter((f) => f.id !== folderId));
       alert(data.message || "Folder deleted!");
     } else {
       alert(data.message || "Failed to delete folder");
@@ -112,6 +115,7 @@ const deleteFolderBackend = async (folderId) => {
     alert("Error deleting folder: " + err.message);
   }
 };
+
 
   // File operations
   const uploadFileBackend = async (folderId, file) => {
