@@ -6,7 +6,7 @@ export default function DocViewer({ selectedDoc }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const token = localStorage.getItem("token");
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+   const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     if (!selectedDoc || !token) return;
