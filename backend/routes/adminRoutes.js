@@ -11,7 +11,7 @@ import { verifyToken, authorizeRole } from "../middleware/authMiddleware.js"; //
 const adminRoute = Router();
 
 // 1. Admin creates user
-adminRoute.post("/create-user", createUser);
+adminRoute.post("/create-user", verifyToken, createUser);
 
 // 2. Admin/Auditor forces password reset
 adminRoute.post("/reset-password/:userId", verifyToken, authorizeRole(['admin', 'auditor']), forcePasswordReset);
