@@ -4,6 +4,7 @@ import {
     getUsers, // Assuming this is defined in adminController
     forcePasswordReset,
     deleteUser,
+    toggleUserStatus,
     updateUserRole
 } from "../controllers/adminController.js"; 
 import { verifyToken, authorizeRole } from "../middleware/authMiddleware.js"; // REVISED
@@ -19,7 +20,8 @@ adminRoute.post("/reset-password/:userId", verifyToken, authorizeRole(['admin', 
 // 3. Admin gets all users
 adminRoute.get("/users", getUsers); // Protected route
 //delete users
-adminRoute.get("/delete-user", verifyToken, authorizeRole(['admin']), deleteUser); // Protected route
-
+adminRoute.get("/delete-user", verifyToken, authorizeRole(['admin']), deleteUser);
+ // Protected route
+adminRoute.patch("/users/:id/status", verifyToken, authorizeRole(["admin"]), toggleUserStatus);
 adminRoute.patch("/update-role/:id", verifyToken, updateUserRole);
 export default adminRoute;

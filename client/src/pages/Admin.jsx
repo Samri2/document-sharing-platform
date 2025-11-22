@@ -209,23 +209,35 @@ const deleteFolderBackend = async (folderId) => {
   };
 
   const toggleUserActive = async (id, isActive) => {
-    const action = isActive ? "deactivate" : "activate";
-    if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
-    try {
-      const res = await fetch(`${API_URL}/admin/users/${id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ isActive: !isActive }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setUsers(users.map((u) => (u.id === id ? { ...u, isActive: !isActive } : u)));
-        alert(`User ${action}d!`);
-      } else alert(data.message || "Failed to update user status");
-    } catch (err) {
-      console.error("Error toggling user status:", err);
+  const action = isActive ? "deactivate" : "activate";
+  if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
+
+  try {
+    const res = await fetch(`${API_URL}/admin/users/${id}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ isActive: !isActive }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      // Instead of just flipping locally, use the value returned from backend
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, isActive: data.isActive } : u))
+      );
+      alert(`User ${action}d!`);
+    } else {
+      alert(data.message || "Failed to update user status");
     }
-  };
+  } catch (err) {
+    console.error("Error toggling user status:", err);
+    alert("Error updating user status: " + err.message);
+  }
+};
 
   const updateUserRole = async (id, newRole) => {
     try {
