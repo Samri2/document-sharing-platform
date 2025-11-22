@@ -24,7 +24,7 @@ export default function DocViewer({ selectedDoc }) {
       try {
         // Use the download endpoint to get the file blob
         const res = await fetch(`${API_URL}/documents/download/${selectedDoc.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+      
         });
 
         if (!res.ok) throw new Error("File not found or unauthorized");

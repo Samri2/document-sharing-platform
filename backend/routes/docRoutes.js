@@ -28,7 +28,7 @@ docRouter.delete("/delete-folder/:id", verifyToken, authorizeRole(["admin"]), de
 
 // === File Routes (admin) ===
 docRouter.delete("/delete-file/:id", verifyToken, authorizeRole(["admin"]), deleteFile);
-docRouter.get("/download/:id", verifyToken, downloadFile);
+docRouter.get("/download/:id", downloadFile);
 
 // === Fetch All Folders + Files ===
 // Public lightweight endpoint
