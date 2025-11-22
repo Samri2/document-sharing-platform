@@ -92,22 +92,26 @@ export default function Admin() {
       console.error("Error creating folder:", err);
     }
   };
+const deleteFolderBackend = async (folderId) => {
+  if (!window.confirm("Delete this folder and all files inside?")) return;
+  try {
+    const res = await fetch(`${API_URL}/documents/delete-folder/${folderId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  const deleteFolderBackend = async (folderId) => {
-    if (!window.confirm("Delete this folder and all files inside?")) return;
-    try {
-      const res = await fetch(`${API_URL}/documents/delete-folder/${folderId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        setFolders((prev) => prev.filter((f) => f.id !== folderId));
-        alert("Folder deleted!");
-      }
-    } catch (err) {
-      console.error("Error deleting folder:", err);
+    const data = await res.json();
+    if (res.ok) {
+      fetchFolders(); // <-- refetch to reflect soft-delete
+      alert(data.message || "Folder deleted!");
+    } else {
+      alert(data.message || "Failed to delete folder");
     }
-  };
+  } catch (err) {
+    console.error("Error deleting folder:", err);
+    alert("Error deleting folder: " + err.message);
+  }
+};
 
   // File operations
   const uploadFileBackend = async (folderId, file) => {
@@ -132,21 +136,27 @@ export default function Admin() {
     }
   };
 
-  const deleteFileBackend = async (fileId) => {
-    if (!window.confirm("Delete this file?")) return;
-    try {
-      const res = await fetch(`${API_URL}/documents/delete-file/${fileId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        fetchFolders();
-        alert("File deleted!");
-      }
-    } catch (err) {
-      console.error("Error deleting file:", err);
+ const deleteFileBackend = async (fileId) => {
+  if (!window.confirm("Delete this file?")) return;
+  try {
+    const res = await fetch(`${API_URL}/documents/delete-file/${fileId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      fetchFolders(); // refetch
+      alert(data.message || "File deleted!");
+    } else {
+      alert(data.message || "Failed to delete file");
     }
-  };
+  } catch (err) {
+    console.error("Error deleting file:", err);
+    alert("Error deleting file: " + err.message);
+  }
+};
+
 
   const downloadFileBackend = async (fileId, filename) => {
     try {

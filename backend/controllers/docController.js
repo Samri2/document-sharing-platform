@@ -125,26 +125,33 @@ export const deleteFile = async (req, res) => {
 };
 export const deleteFolder = async (req, res) => {
   try {
-    const folder = await Folder.findByPk(req.params.id, { include: [{ model: File }] });
+    const folder = await Folder.findByPk(req.params.id, {
+      include: [{ model: File }],
+    });
     if (!folder) return res.status(404).json({ message: "Folder not found" });
 
     const isAuthorized = folder.ownerId === req.user.id || req.user.role === "admin";
     if (!isAuthorized) return res.status(403).json({ message: "Access denied" });
 
+    // Mark folder as deleted
     folder.isDeleted = true;
     await folder.save();
 
-    for (const file of folder.Files || []) {
-      file.isDeleted = true;
-      await file.save();
+    // Mark all files as deleted (if any)
+    if (folder.Files && folder.Files.length > 0) {
+      for (const file of folder.Files) {
+        file.isDeleted = true;
+        await file.save();
+      }
     }
 
     res.json({ message: "Folder and its contents deleted successfully" });
   } catch (err) {
     console.error("Delete folder failed:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message || "Server error" });
   }
 };
+
 // Download file
 export const downloadFile = async (req, res) => {
   try {
