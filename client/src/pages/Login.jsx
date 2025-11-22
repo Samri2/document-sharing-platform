@@ -72,7 +72,7 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/change-password`, {
+      const res = await fetch(`${API_BASE}/auth/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailToChange, newPassword }),
